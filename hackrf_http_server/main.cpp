@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <iomanip>
 #include <arpa/inet.h>
-#include "../../tinyflex.h"
+#include "../tinyflex/tinyflex.h"
 #include "include/config.hpp"
 #include "include/fsk.hpp"
 #include "include/hackrf_util.hpp"

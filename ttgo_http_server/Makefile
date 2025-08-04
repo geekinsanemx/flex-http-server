@@ -8,7 +8,7 @@ LDFLAGS = -lcrypt
 
 # Source files
 SOURCES = main.cpp
-HEADERS = include/config.hpp include/tcp_util.hpp include/http_util.hpp include/ttgo_util.hpp ../../tinyflex.h
+HEADERS = include/config.hpp include/tcp_util.hpp include/http_util.hpp include/ttgo_util.hpp ../tinyflex/tinyflex.h
 
 # Target executable
 TARGET = ttgo_http_server

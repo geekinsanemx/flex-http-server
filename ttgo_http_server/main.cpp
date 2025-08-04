@@ -12,7 +12,7 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <poll.h>
-#include "../../tinyflex.h"
+#include "../tinyflex/tinyflex.h"
 #include "include/config.hpp"
 #include "include/tcp_util.hpp"
 #include "include/http_util.hpp"
