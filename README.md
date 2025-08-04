@@ -49,6 +49,20 @@ A webhook service that bridges Grafana Alertmanager to any FLEX paging HTTP serv
 
 ## Quick Start
 
+### Initial Setup
+
+**⚠️ Important: Clone with submodules**
+
+This project uses the tinyflex library as a submodule. You must clone recursively or initialize submodules manually:
+
+```bash
+# Option 1: Clone with submodules (recommended)
+git clone --recursive https://github.com/geekinsanemx/flex-http-server.git
+
+# Option 2: If already cloned, initialize submodules
+git submodule update --init --recursive
+```
+
 ### Choose Your Implementation
 
 **For production/enterprise use with SDR hardware:**
