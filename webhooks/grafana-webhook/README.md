@@ -366,40 +366,6 @@ This shows:
 - FLEX server communication
 - Response handling
 
-## Migration from hackrf-grafana-webhook
-
-If upgrading from the old `hackrf-grafana-webhook` service:
-
-### 1. Stop old service
-```bash
-sudo systemctl stop hackrf-grafana-webhook
-sudo systemctl disable hackrf-grafana-webhook
-```
-
-### 2. Migrate configuration
-```bash
-# Copy and rename config
-sudo cp /etc/hackrf-grafana-webhook/hackrf-grafana-webhook.cfg \
-        /etc/grafana-webhook/grafana-webhook.cfg
-
-# Update config file (change HACKRF_* to FLEX_*)
-sudo sed -i 's/HACKRF_/FLEX_/g' /etc/grafana-webhook/grafana-webhook.cfg
-sudo sed -i 's/\[HACKRF\]/[FLEX]/g' /etc/grafana-webhook/grafana-webhook.cfg
-```
-
-### 3. Update Grafana configuration
-Update your Grafana webhook URLs from:
-```
-http://your-server:8080/api/v1/alerts
-```
-(No URL change needed - same endpoints)
-
-### 4. Start new service
-```bash
-sudo systemctl enable grafana-webhook
-sudo systemctl start grafana-webhook
-```
-
 ## Integration Examples
 
 ### Python Client
