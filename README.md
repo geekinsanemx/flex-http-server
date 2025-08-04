@@ -224,7 +224,7 @@ This work is based on and inspired by several excellent projects in the SDR and 
 * **[ttgo-fsk-tx](https://github.com/rlaneth/ttgo-fsk-tx/)** - Essential firmware for TTGO LoRa32-OLED development board that enables cost-effective FSK transmission. **This is a required dependency for the TTGO implementation** and provides the core FSK modulation capabilities that make portable FLEX paging possible
 * **[ellisgl](https://github.com/ellisgl)** - For the hackrf_tcp_server contribution via [PR #6](https://github.com/Theldus/tinyflex/pull/6) to tinyflex, which helped shape the TCP server implementation and influenced our dual-protocol approach
 
-Special thanks to these developers for their pioneering work in software-defined radio and paging protocols. The combination of traditional SDR hardware (HackRF), modern ESP32-based development boards (TTGO with ttgo-fsk-tx firmware), and cloud integration (Grafana webhooks) provides users with flexible deployment options ranging from high-performance enterprise solutions to cost-effective IoT implementations.
+Special thanks to these developers for their work in software-defined radio and paging protocols. The combination of traditional SDR hardware (HackRF), modern ESP32-based development boards (TTGO with ttgo-fsk-tx firmware), and cloud integration (Grafana webhooks) provides users with flexible deployment options ranging from high-performance enterprise solutions to cost-effective IoT implementations.
 
 ## Support
 
