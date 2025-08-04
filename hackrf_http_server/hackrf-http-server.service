@@ -1,0 +1,130 @@
+# HackRF HTTP/TCP Server - Systemd Service Unit
+# ==============================================
+#
+# Installation:
+#   1. Copy this file to: /etc/systemd/system/hackrf-http-server.service
+#   2. Create environment file: /etc/default/hackrf_http_server (or copy config.ini file)
+#   3. Create hackrf user: sudo useradd -r -s /bin/false -d /var/lib/hackrf-server hackrf
+#   4. Create working directory: sudo mkdir -p /var/lib/hackrf-server
+#   5. Set permissions: sudo chown hackrf:hackrf /var/lib/hackrf-server
+#   6. Install binary: sudo cp hackrf_http_server /usr/local/bin/
+#   7. Reload systemd: sudo systemctl daemon-reload
+#   8. Enable service: sudo systemctl enable hackrf-http-server
+#   9. Start service: sudo systemctl start hackrf-http-server
+#
+# Usage:
+#   sudo systemctl start hackrf-http-server      # Start service
+#   sudo systemctl stop hackrf-http-server       # Stop service
+#   sudo systemctl restart hackrf-http-server    # Restart service
+#   sudo systemctl status hackrf-http-server     # Check status
+#   sudo systemctl enable hackrf-http-server     # Enable auto-start
+#   sudo systemctl disable hackrf-http-server    # Disable auto-start
+#   sudo journalctl -u hackrf-http-server -f     # Follow logs
+#   sudo journalctl -u hackrf-http-server --since "1 hour ago"  # Recent logs
+#
+# Configuration:
+#   Edit /etc/default/hackrf_http_server to configure the server
+#   This file uses environment variables that override config.ini defaults
+#
+# Security Notes:
+#   - Service runs as non-privileged 'hackrf' user
+#   - Working directory is /var/lib/hackrf-server
+#   - Password file should be at /var/lib/hackrf-server/passwords
+#   - Use: sudo -u hackrf htpasswd -B /var/lib/hackrf-server/passwords username
+#
+
+[Unit]
+Description=HackRF HTTP/TCP FLEX Paging Server
+Documentation=man:hackrf_http_server(1)
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=hackrf
+Group=hackrf
+WorkingDirectory=/var/lib/hackrf-server
+
+# Environment configuration file
+# Create /etc/default/hackrf_http_server with your settings
+EnvironmentFile=-/etc/default/hackrf_http_server
+
+# Main service executable
+ExecStart=/usr/local/bin/hackrf_http_server --verbose
+
+# Service behavior
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/hackrf-server
+
+# Resource limits
+LimitNOFILE=1024
+MemoryMax=512M
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hackrf-http-server
+
+[Install]
+WantedBy=multi-user.target
+
+# Environment File Example (/etc/default/hackrf_http_server):
+# ==========================================================
+#
+# # Network Configuration
+# BIND_ADDRESS=127.0.0.1
+# SERIAL_LISTEN_PORT=16175
+# HTTP_LISTEN_PORT=16180
+#
+# # Authentication
+# HTTP_AUTH_CREDENTIALS=/var/lib/hackrf-server/passwords
+#
+# # HackRF Configuration
+# SAMPLE_RATE=2000000
+# BITRATE=1600
+# AMPLITUDE=127
+# FREQ_DEV=2400
+# TX_GAIN=0
+# DEFAULT_FREQUENCY=931937500
+#
+# Create passwords file:
+# sudo -u hackrf htpasswd -c -B /var/lib/hackrf-server/passwords admin
+#
+# Troubleshooting:
+# ================
+#
+# Check service status:
+#   sudo systemctl status hackrf-http-server
+#
+# View logs:
+#   sudo journalctl -u hackrf-http-server -f
+#
+# Test configuration:
+#   sudo -u hackrf /usr/local/bin/hackrf_http_server --verbose
+#
+# Check HackRF device:
+#   sudo hackrf_info
+#   sudo lsusb | grep HackRF
+#
+# Check port bindings:
+#   sudo netstat -tlnp | grep hackrf
+#   sudo ss -tlnp | grep hackrf
+#
+# File permissions:
+#   ls -la /var/lib/hackrf-server/
+#   sudo -u hackrf ls -la /var/lib/hackrf-server/
+#
+# Common Issues:
+# - Permission denied: Check hackrf user permissions and group membership
+# - Port in use: Check if another process is using the configured ports
+# - HackRF not found: Ensure device is connected and hackrf user has USB access
+# - Authentication failed: Check password file format and permissions

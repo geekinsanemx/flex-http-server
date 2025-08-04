@@ -1,0 +1,119 @@
+# TTGO HTTP/TCP Server - Systemd Service File
+# ===========================================
+#
+# This service file allows the TTGO HTTP/TCP server to run as a system service.
+#
+# INSTALLATION INSTRUCTIONS:
+# ========================
+#
+# 1. Build and install the server binary:
+#    make
+#    sudo cp ttgo_http_server /usr/local/bin/
+#    sudo chmod +x /usr/local/bin/ttgo_http_server
+#
+# 2. Create system directories and user:
+#    sudo mkdir -p /opt/ttgo-server
+#    sudo useradd -r -s /bin/false -d /opt/ttgo-server ttgo
+#    sudo usermod -a -G dialout ttgo
+#    sudo chown ttgo:ttgo /opt/ttgo-server
+#
+# 3. Copy configuration file:
+#    sudo cp config.ini /opt/ttgo-server/
+#    sudo chown ttgo:ttgo /opt/ttgo-server/config.ini
+#    # Edit /opt/ttgo-server/config.ini as needed
+#
+# 4. Install this service file:
+#    sudo cp ttgo-http-server.service /etc/systemd/system/
+#
+# 5. Enable and start the service:
+#    sudo systemctl daemon-reload
+#    sudo systemctl enable ttgo-http-server
+#    sudo systemctl start ttgo-http-server
+#
+# MANAGEMENT COMMANDS:
+# ==================
+#
+# Check service status:
+#    sudo systemctl status ttgo-http-server
+#
+# View logs:
+#    sudo journalctl -u ttgo-http-server -f
+#
+# Stop the service:
+#    sudo systemctl stop ttgo-http-server
+#
+# Restart the service:
+#    sudo systemctl restart ttgo-http-server
+#
+# Disable the service:
+#    sudo systemctl disable ttgo-http-server
+#
+# UNINSTALLATION:
+# ==============
+#
+# 1. Stop and disable service:
+#    sudo systemctl stop ttgo-http-server
+#    sudo systemctl disable ttgo-http-server
+#
+# 2. Remove service file:
+#    sudo rm /etc/systemd/system/ttgo-http-server.service
+#    sudo systemctl daemon-reload
+#
+# 3. Remove binary and directories:
+#    sudo rm /usr/local/bin/ttgo_http_server
+#    sudo rm -rf /opt/ttgo-server
+#    sudo userdel ttgo
+#
+# TROUBLESHOOTING:
+# ===============
+#
+# If the service fails to start, check:
+# - Device permissions: ls -l /dev/ttyACM* /dev/ttyUSB*
+# - User groups: groups ttgo
+# - Configuration: cat /opt/ttgo-server/config.ini
+# - Logs: sudo journalctl -u ttgo-http-server --no-pager
+#
+# To test manually before using as service:
+#    sudo -u ttgo /usr/local/bin/ttgo_http_server --verbose --debug
+#
+
+[Unit]
+Description=TTGO HTTP/TCP FLEX Paging Server
+Documentation=https://github.com/your-repo/ttgo-server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=ttgo
+Group=dialout
+WorkingDirectory=/opt/ttgo-server
+ExecStart=/usr/local/bin/ttgo_http_server --verbose
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ttgo-http-server
+
+# Security settings
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/ttgo-server
+PrivateTmp=yes
+PrivateDevices=no
+DevicePolicy=closed
+DeviceAllow=/dev/ttyACM* rw
+DeviceAllow=/dev/ttyUSB* rw
+
+# Resource limits
+LimitNOFILE=1024
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target

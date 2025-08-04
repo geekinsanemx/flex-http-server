@@ -1,0 +1,27 @@
+[Unit]
+Description=HackRF Grafana Webhook Service
+After=network.target
+
+[Service]
+Type=simple
+User=hackrf
+Group=hackrf
+EnvironmentFile=-/etc/default/hackrf-grafana-webhook
+ExecStartPre=/bin/mkdir -p /etc/hackrf-grafana-webhook
+ExecStartPre=/bin/chown -R hackrf:hackrf /etc/hackrf-grafana-webhook
+ExecStart=/usr/bin/python3 /opt/hackrf-grafana-webhook/hackrf-grafana-webhook.py --config /etc/hackrf-grafana-webhook/hackrf-grafana-webhook.cfg
+Restart=on-failure
+RestartSec=5s
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=hackrf-grafana-webhook
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+
+[Install]
+WantedBy=multi-user.target
