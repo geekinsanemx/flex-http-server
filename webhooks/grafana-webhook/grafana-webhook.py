@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-HackRF Grafana Webhook Service
-==============================
+Grafana Webhook Service for FLEX Paging
+========================================
 
 This service receives Grafana alertmanager webhook notifications and forwards
-them to the HackRF HTTP server for FLEX paging transmission.
+them to any FLEX HTTP server (HackRF or TTGO) for paging transmission.
 
 Features:
 - Receives Grafana webhook alerts via REST API
@@ -15,8 +15,9 @@ Features:
 - Comprehensive logging and error handling
 - Systemd service integration
 - Multiple configuration sources: CLI args > env vars > config file > defaults
+- Universal compatibility with HackRF and TTGO HTTP servers
 
-Author: Generated for HackRF FLEX Paging System
+Author: Generated for FLEX Paging System
 """
 
 import os
@@ -40,9 +41,9 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-logger = logging.getLogger('hackrf_grafana_webhook')
+logger = logging.getLogger('grafana_webhook')
 
-class HackrfGrafanaWebhook:
+class GrafanaWebhook:
     def __init__(self, config_file: Optional[str] = None):
         """Initialize with configuration from multiple sources."""
         self.config = self.load_configuration(config_file)
@@ -65,8 +66,8 @@ class HackrfGrafanaWebhook:
         if self.config.getboolean('SSL', 'SSL_ENABLED') and self.bind_port == 8080:
             self.bind_port = 8443  # Use 8443 for SSL by default
 
-        logger.info("HackRF Grafana Webhook Service initialized")
-        logger.info(f"HackRF Server: {self.config.get('HACKRF', 'HACKRF_SERVER_URL')}")
+        logger.info("Grafana Webhook Service initialized")
+        logger.info(f"FLEX Server: {self.config.get('FLEX', 'FLEX_SERVER_URL')}")
         logger.info(f"Bind Address: {self.config.get('FLASK', 'BIND_HOST')}:{self.bind_port}")
         logger.info(f"HTTPS Enabled: {self.config.getboolean('SSL', 'SSL_ENABLED')}")
 
@@ -76,10 +77,10 @@ class HackrfGrafanaWebhook:
 
         # Set default values
         config.read_dict({
-            'HACKRF': {
-                'HACKRF_SERVER_URL': 'http://127.0.0.1:16180',
-                'HACKRF_USERNAME': 'admin',
-                'HACKRF_PASSWORD': 'passw0rd',
+            'FLEX': {
+                'FLEX_SERVER_URL': 'http://127.0.0.1:16180',
+                'FLEX_USERNAME': 'admin',
+                'FLEX_PASSWORD': 'passw0rd',
                 'DEFAULT_CAPCODE': '',
                 'DEFAULT_FREQUENCY': '931937500',
                 'REQUEST_TIMEOUT': '30'
@@ -135,9 +136,10 @@ class HackrfGrafanaWebhook:
             return jsonify({
                 'status': 'healthy',
                 'timestamp': datetime.now().isoformat(),
-                'service': 'hackrf-grafana-webhook',
+                'service': 'grafana-webhook',
                 'port': self.bind_port,
-                'ssl': self.config.getboolean('SSL', 'SSL_ENABLED')
+                'ssl': self.config.getboolean('SSL', 'SSL_ENABLED'),
+                'flex_server': self.config.get('FLEX', 'FLEX_SERVER_URL')
             })
 
         @self.app.route('/api/v1/alerts', methods=['POST'])
@@ -229,7 +231,7 @@ class HackrfGrafanaWebhook:
             alert_name = labels.get('alertname', 'Unknown Alert')
 
             # Extract capcode
-            capcode = self.config.get('HACKRF', 'DEFAULT_CAPCODE')
+            capcode = self.config.get('FLEX', 'DEFAULT_CAPCODE')
             for key in ['capcode', 'pager_capcode', 'flex_capcode']:
                 if key in labels:
                     try:
@@ -244,7 +246,7 @@ class HackrfGrafanaWebhook:
                 pass
 
             # Extract frequency
-            frequency = self.config.getint('HACKRF', 'DEFAULT_FREQUENCY')
+            frequency = self.config.getint('FLEX', 'DEFAULT_FREQUENCY')
             for key in ['frequency', 'pager_frequency', 'flex_frequency']:
                 if key in labels:
                     try:
@@ -265,16 +267,16 @@ class HackrfGrafanaWebhook:
             final_message = f"[{status}] {alert_name}: {message_content}"
 
             # Prepare payload
-            hackrf_payload = {
+            flex_payload = {
                 'capcode': capcode,
                 'message': final_message,
                 'frequency': frequency
             }
 
-            logger.info(f"Alert {alert_index}: Sending to HackRF (capcode={capcode}, freq={frequency})")
+            logger.info(f"Alert {alert_index}: Sending to FLEX server (capcode={capcode}, freq={frequency})")
 
-            # Send to HackRF server
-            success, response_data = self.send_to_hackrf(hackrf_payload)
+            # Send to FLEX server
+            success, response_data = self.send_to_flex_server(flex_payload)
 
             return {
                 'alert_index': alert_index,
@@ -282,7 +284,7 @@ class HackrfGrafanaWebhook:
                 'capcode': capcode,
                 'frequency': frequency,
                 'success': success,
-                'hackrf_response': response_data
+                'flex_response': response_data
             }
 
         except Exception as e:
@@ -293,15 +295,15 @@ class HackrfGrafanaWebhook:
                 'error': str(e)
             }
 
-    def send_to_hackrf(self, payload: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
-        """Send message payload to HackRF HTTP server."""
+    def send_to_flex_server(self, payload: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
+        """Send message payload to FLEX HTTP server (HackRF or TTGO)."""
         try:
-            url = self.config.get('HACKRF', 'HACKRF_SERVER_URL')
+            url = self.config.get('FLEX', 'FLEX_SERVER_URL')
             auth = (
-                self.config.get('HACKRF', 'HACKRF_USERNAME'),
-                self.config.get('HACKRF', 'HACKRF_PASSWORD')
+                self.config.get('FLEX', 'FLEX_USERNAME'),
+                self.config.get('FLEX', 'FLEX_PASSWORD')
             )
-            timeout = self.config.getint('HACKRF', 'REQUEST_TIMEOUT')
+            timeout = self.config.getint('FLEX', 'REQUEST_TIMEOUT')
 
             response = requests.post(
                 url,
@@ -341,10 +343,10 @@ def generate_config(output_path: str):
     """Generate default configuration file."""
     config = configparser.ConfigParser()
 
-    config['HACKRF'] = {
-        'HACKRF_SERVER_URL': 'http://localhost:16180',
-        'HACKRF_USERNAME': 'admin',
-        'HACKRF_PASSWORD': 'passw0rd',
+    config['FLEX'] = {
+        'FLEX_SERVER_URL': 'http://localhost:16180',
+        'FLEX_USERNAME': 'admin',
+        'FLEX_PASSWORD': 'passw0rd',
         'DEFAULT_CAPCODE': '0037137',
         'DEFAULT_FREQUENCY': '931937500',
         'REQUEST_TIMEOUT': '30'
@@ -356,8 +358,8 @@ def generate_config(output_path: str):
     }
 
     config['SSL'] = {
-        'SSL_CERT_PATH': '/etc/ssl/certs/hackrf-grafana-webhook.crt',
-        'SSL_KEY_PATH': '/etc/ssl/private/hackrf-grafana-webhook.key'
+        'SSL_CERT_PATH': '/etc/ssl/certs/grafana-webhook.crt',
+        'SSL_KEY_PATH': '/etc/ssl/private/grafana-webhook.key'
     }
 
     config['LOGGING'] = {
@@ -375,7 +377,7 @@ def generate_config(output_path: str):
 def main():
     """Main entry point with command-line interface."""
     parser = argparse.ArgumentParser(
-        description='HackRF Grafana Webhook Service',
+        description='Grafana Webhook Service for FLEX Paging',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''Configuration Priority:
   1. Command-line arguments (--config, --verbose)
@@ -384,9 +386,9 @@ def main():
   4. Internal defaults
 
 Environment Variables:
-  HACKRF_SERVER_URL    HackRF server URL
-  HACKRF_USERNAME      HackRF server username
-  HACKRF_PASSWORD      HackRF server password
+  FLEX_SERVER_URL      FLEX server URL (HackRF/TTGO)
+  FLEX_USERNAME        FLEX server username
+  FLEX_PASSWORD        FLEX server password
   DEFAULT_CAPCODE      Default capcode for alerts
   DEFAULT_FREQUENCY    Default frequency for alerts (Hz)
   REQUEST_TIMEOUT      Network timeout (seconds)
@@ -399,7 +401,7 @@ Environment Variables:
     )
 
     parser.add_argument('-c', '--config', metavar='FILE',
-                        help='Path to configuration file (default: /etc/hackrf-grafana-webhook/hackrf-grafana-webhook.cfg)')
+                        help='Path to configuration file (default: /etc/grafana-webhook/grafana-webhook.cfg)')
     parser.add_argument('-g', '--generate-config', metavar='FILE',
                         help='Generate default configuration file')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -413,12 +415,12 @@ Environment Variables:
 
     # Set default config path if not specified
     if not args.config:
-        default_cfg = '/etc/hackrf-grafana-webhook/hackrf-grafana-webhook.cfg'
+        default_cfg = '/etc/grafana-webhook/grafana-webhook.cfg'
         if os.path.exists(default_cfg):
             args.config = default_cfg
 
     # Initialize service
-    service = HackrfGrafanaWebhook(config_file=args.config)
+    service = GrafanaWebhook(config_file=args.config)
 
     # Override debug mode if requested
     if args.verbose:

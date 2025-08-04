@@ -1,0 +1,31 @@
+[Unit]
+Description=Grafana Webhook Service for FLEX Paging
+Documentation=https://github.com/geekinsanemx/flex-http-server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=grafana
+Group=grafana
+WorkingDirectory=/opt/grafana-webhook
+ExecStart=/usr/local/bin/grafana-webhook --config /etc/grafana-webhook/grafana-webhook.cfg
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=grafana-webhook
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/grafana-webhook
+
+# Environment file (optional)
+EnvironmentFile=-/etc/default/grafana-webhook
+
+[Install]
+WantedBy=multi-user.target
