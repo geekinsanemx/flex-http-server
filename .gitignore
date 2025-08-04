@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# custom
+hackrf_http_server/hackrf_http_server
+hackrf_http_server/main.o
+tinyflex/
+ttgo_http_server/ttgo_http_server
+
