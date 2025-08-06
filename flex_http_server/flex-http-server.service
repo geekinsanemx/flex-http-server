@@ -1,0 +1,119 @@
+# FLEX HTTP/TCP Server - Systemd Service File
+# ==========================================
+#
+# This service file allows the FLEX HTTP/TCP server to run as a system service.
+#
+# INSTALLATION INSTRUCTIONS:
+# ========================
+#
+# 1. Build and install the server binary:
+#    make
+#    sudo cp flex_http_server /usr/local/bin/
+#    sudo chmod +x /usr/local/bin/flex_http_server
+#
+# 2. Create system directories and user:
+#    sudo mkdir -p /opt/flex-server
+#    sudo useradd -r -s /bin/false -d /opt/flex-server flex
+#    sudo usermod -a -G dialout flex
+#    sudo chown flex:flex /opt/flex-server
+#
+# 3. Copy configuration file:
+#    sudo cp config.ini /opt/flex-server/
+#    sudo chown flex:flex /opt/flex-server/config.ini
+#    # Edit /opt/flex-server/config.ini as needed
+#
+# 4. Install this service file:
+#    sudo cp flex-http-server.service /etc/systemd/system/
+#
+# 5. Enable and start the service:
+#    sudo systemctl daemon-reload
+#    sudo systemctl enable flex-http-server
+#    sudo systemctl start flex-http-server
+#
+# MANAGEMENT COMMANDS:
+# ==================
+#
+# Check service status:
+#    sudo systemctl status flex-http-server
+#
+# View logs:
+#    sudo journalctl -u flex-http-server -f
+#
+# Stop the service:
+#    sudo systemctl stop flex-http-server
+#
+# Restart the service:
+#    sudo systemctl restart flex-http-server
+#
+# Disable the service:
+#    sudo systemctl disable flex-http-server
+#
+# UNINSTALLATION:
+# ==============
+#
+# 1. Stop and disable service:
+#    sudo systemctl stop flex-http-server
+#    sudo systemctl disable flex-http-server
+#
+# 2. Remove service file:
+#    sudo rm /etc/systemd/system/flex-http-server.service
+#    sudo systemctl daemon-reload
+#
+# 3. Remove binary and directories:
+#    sudo rm /usr/local/bin/flex_http_server
+#    sudo rm -rf /opt/flex-server
+#    sudo userdel flex
+#
+# TROUBLESHOOTING:
+# ===============
+#
+# If the service fails to start, check:
+# - Device permissions: ls -l /dev/ttyACM* /dev/ttyUSB*
+# - User groups: groups flex
+# - Configuration: cat /opt/flex-server/config.ini
+# - Logs: sudo journalctl -u flex-http-server --no-pager
+#
+# To test manually before using as service:
+#    sudo -u flex /usr/local/bin/flex_http_server --verbose --debug
+#
+
+[Unit]
+Description=FLEX HTTP/TCP Paging Server
+Documentation=https://github.com/your-repo/flex-server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=flex
+Group=dialout
+WorkingDirectory=/opt/flex-server
+ExecStart=/usr/local/bin/flex_http_server --verbose
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=flex-http-server
+
+# Security settings
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/flex-server
+PrivateTmp=yes
+PrivateDevices=no
+DevicePolicy=closed
+DeviceAllow=/dev/ttyACM* rw
+DeviceAllow=/dev/ttyUSB* rw
+
+# Resource limits
+LimitNOFILE=1024
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target
