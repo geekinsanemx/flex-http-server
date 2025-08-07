@@ -27,13 +27,25 @@ A full-featured FLEX paging server for HackRF devices with enterprise-grade feat
 **Cost-effective ESP32-based implementation**
 
 A lightweight FLEX paging server for TTGO ESP32 + SX127x modules:
-- **Hardware**: TTGO LoRa32 V1/V2, TTGO T-Beam with ttgo-fsk-tx firmware
+- **Hardware**: TTGO LoRa32 V1/V2, TTGO T-Beam, TTGO LoRa32-OLED with ttgo-fsk-tx firmware
 - **Protocols**: HTTP JSON API + legacy TCP protocol
 - **Features**: Direct ESP32 communication, multiple ISM bands support (433/868/915 MHz)
 - **Dependencies**: Requires [ttgo-fsk-tx firmware](https://github.com/rlaneth/ttgo-fsk-tx/)
 - **Use Case**: Portable, low-cost paging solutions, IoT integration
 
 [📖 See detailed documentation](./ttgo_http_server/README.md)
+
+### 🔧 [FLEX HTTP Server](./flex_http_server/)
+**Modern AT command-based implementation**
+
+An AT command-based FLEX paging server for broader hardware compatibility:
+- **Hardware**: TTGO LoRa32-OLED, Heltec WiFi LoRa 32 V3, Heltec LoRa32 V3 with flex-fsk-tx firmware
+- **Protocols**: HTTP JSON API + legacy TCP protocol
+- **Features**: Standard AT command interface, universal device compatibility
+- **Dependencies**: Requires [flex-fsk-tx firmware](https://github.com/geekinsanemx/flex-fsk-tx/)
+- **Use Case**: Modern implementation with broader hardware support
+
+[📖 See detailed documentation](./flex_http_server/README.md)
 
 ### 🔗 [Grafana Webhook Integration](./webhooks/grafana-webhook/)
 **Universal monitoring system integration bridge**
@@ -72,11 +84,18 @@ make deps && make
 ./hackrf_http_server --verbose
 ```
 
-**For cost-effective/portable solutions:**
+**For cost-effective/portable solutions (original TTGO firmware):**
 ```bash
 cd ttgo_http_server/
-# First flash your TTGO with ttgo-fsk-tx firmware
+# First flash your TTGO device with ttgo-fsk-tx firmware
 make && ./ttgo_http_server --verbose
+```
+
+**For modern AT command implementation (broader hardware support):**
+```bash
+cd flex_http_server/
+# First flash your TTGO/Heltec device with flex-fsk-tx firmware
+make && ./flex_http_server --verbose
 ```
 
 **For Grafana monitoring integration with any backend:**
@@ -111,9 +130,15 @@ curl -X POST http://localhost:16180/ \
 - USB 3.0 connection recommended
 - Linux system (Ubuntu/Debian preferred)
 
-### TTGO Implementation
-- TTGO LoRa32 V1/V2 or TTGO T-Beam
+### TTGO Implementation (Original)
+- TTGO LoRa32 V1/V2, TTGO T-Beam, TTGO LoRa32-OLED
 - [ttgo-fsk-tx firmware](https://github.com/rlaneth/ttgo-fsk-tx/) (required dependency)
+- USB connection for programming and communication
+- Compatible antenna for chosen ISM band
+
+### FLEX Implementation (AT Commands)
+- TTGO LoRa32-OLED, Heltec WiFi LoRa 32 V3, Heltec LoRa32 V3
+- [flex-fsk-tx firmware](https://github.com/geekinsanemx/flex-fsk-tx/) (required dependency)
 - USB connection for programming and communication
 - Compatible antenna for chosen ISM band
 
@@ -124,19 +149,21 @@ curl -X POST http://localhost:16180/ \
 
 ## Features Comparison
 
-| Feature | HackRF Server | TTGO Server | Grafana Webhook |
-|---------|---------------|-------------|-----------------|
-| **HTTP JSON API** | ✅ | ✅ | ✅ (receives) |
-| **TCP Serial Protocol** | ✅ | ✅ | ❌ |
-| **Authentication** | ✅ htpasswd | ✅ htpasswd | ✅ (to HackRF) |
-| **Debug Mode** | ✅ | ✅ | ✅ |
-| **Verbose Logging** | ✅ | ✅ | ✅ |
-| **Systemd Service** | ✅ | ✅ | ✅ |
-| **AWS Lambda Compatible** | ✅ | ✅ | ✅ |
-| **EMR Support** | ✅ | ✅ | via any backend |
-| **Multi-band Support** | ✅ (VHF/UHF) | ✅ (ISM bands) | N/A |
-| **Hardware Cost** | High (SDR) | Low (ESP32) | Software only |
-| **Backend Compatibility** | N/A | N/A | Both HackRF & TTGO |
+| Feature | HackRF Server | TTGO Server | FLEX Server | Grafana Webhook |
+|---------|---------------|-------------|-------------|-----------------|
+| **HTTP JSON API** | ✅ | ✅ | ✅ | ✅ (receives) |
+| **TCP Serial Protocol** | ✅ | ✅ | ✅ | ❌ |
+| **Authentication** | ✅ htpasswd | ✅ htpasswd | ✅ htpasswd | ✅ (to backend) |
+| **Debug Mode** | ✅ | ✅ | ✅ | ✅ |
+| **Verbose Logging** | ✅ | ✅ | ✅ | ✅ |
+| **Systemd Service** | ✅ | ✅ | ✅ | ✅ |
+| **AWS Lambda Compatible** | ✅ | ✅ | ✅ | ✅ |
+| **EMR Support** | ✅ | ✅ | ✅ | via any backend |
+| **Multi-band Support** | ✅ (VHF/UHF) | ✅ (ISM bands) | ✅ (ISM bands) | N/A |
+| **Hardware Cost** | High (SDR) | Low (ESP32) | Low (ESP32) | Software only |
+| **Communication Protocol** | Direct | Custom binary | AT commands | HTTP client |
+| **Firmware Required** | None | ttgo-fsk-tx | flex-fsk-tx | N/A |
+| **Backend Compatibility** | N/A | N/A | N/A | All servers |
 
 ## Common Configuration
 
@@ -164,7 +191,7 @@ DEFAULT_FREQUENCY=931937500
 931.4375 MHz - Motorola infrastructure
 ```
 
-### TTGO (ISM Bands)
+### TTGO/FLEX (ISM Bands)
 ```
 433.500 MHz - Global ISM band
 868.000 MHz - Europe ISM band  
@@ -195,7 +222,7 @@ def send_flex_message(server_url, username, password, capcode, message, frequenc
     )
     return response.status_code == 200
 
-# Works with both HackRF and TTGO servers
+# Works with HackRF, TTGO, and FLEX servers
 send_flex_message('http://localhost:16180', 'admin', 'passw0rd',
                   1122334, 'Test message', 931937500)
 ```
@@ -203,15 +230,18 @@ send_flex_message('http://localhost:16180', 'admin', 'passw0rd',
 ### Monitoring Integration
 ```bash
 # Grafana webhook → Any FLEX HTTP server
-Grafana Alert → Webhook Service → HackRF/TTGO Server → FLEX Transmission
+Grafana Alert → Webhook Service → HackRF/TTGO/FLEX Server → FLEX Transmission
 
 # Configure webhook to use HackRF server
 FLEX_SERVER_URL=http://localhost:16180  # HackRF server
 
 # Or configure webhook to use TTGO server  
-FLEX_SERVER_URL=http://localhost:16180  # TTGO server (same API!)
+FLEX_SERVER_URL=http://localhost:16180  # TTGO server (original firmware)
 
-# Manual monitoring integration (works with both)
+# Or configure webhook to use FLEX server
+FLEX_SERVER_URL=http://localhost:16180  # FLEX server (AT commands)
+
+# Manual monitoring integration (works with all)
 curl -X POST http://localhost:16180/ \
   -u admin:passw0rd \
   -H "Content-Type: application/json" \
@@ -223,7 +253,8 @@ curl -X POST http://localhost:16180/ \
 Each implementation has its own build system and dependencies. See individual README files for specific development instructions:
 
 - [HackRF development guide](./hackrf_http_server/README.md#troubleshooting)
-- [TTGO development guide](./ttgo_http_server/README.md#development)
+- [TTGO development guide](./ttgo_http_server/README.md#development)  
+- [FLEX development guide](./flex_http_server/README.md#development)
 - [Webhook development](./webhooks/grafana-webhook/README.md)
 
 ## License
@@ -235,10 +266,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 This work is based on and inspired by several excellent projects in the SDR and paging community:
 
 * **[tinyflex](https://github.com/Theldus/tinyflex)** - A minimal FLEX paging transmitter that provided the foundation for the FLEX protocol implementation across all our servers
-* **[ttgo-fsk-tx](https://github.com/rlaneth/ttgo-fsk-tx/)** - Essential firmware for TTGO LoRa32-OLED development board that enables cost-effective FSK transmission. **This is a required dependency for the TTGO implementation** and provides the core FSK modulation capabilities that make portable FLEX paging possible
+* **[ttgo-fsk-tx](https://github.com/rlaneth/ttgo-fsk-tx/)** - Original firmware for TTGO LoRa32 development boards that enables FSK transmission. **This is a required dependency for the TTGO implementation**
+* **[flex-fsk-tx](https://github.com/geekinsanemx/flex-fsk-tx/)** - Modern AT command firmware for TTGO and Heltec development boards. **This is a required dependency for the FLEX implementation** and provides AT command interface for broader hardware compatibility
 * **[ellisgl](https://github.com/ellisgl)** - For the hackrf_tcp_server contribution via [PR #6](https://github.com/Theldus/tinyflex/pull/6) to tinyflex, which helped shape the TCP server implementation and influenced our dual-protocol approach
 
-Special thanks to these developers for their work in software-defined radio and paging protocols. The combination of traditional SDR hardware (HackRF), modern ESP32-based development boards (TTGO with ttgo-fsk-tx firmware), and cloud integration (Grafana webhooks) provides users with flexible deployment options ranging from high-performance enterprise solutions to cost-effective IoT implementations.
+Special thanks to these developers for their work in software-defined radio and paging protocols. The combination of traditional SDR hardware (HackRF), ESP32-based development boards with original firmware (TTGO with ttgo-fsk-tx), modern AT command implementation (TTGO/Heltec with flex-fsk-tx), and cloud integration (Grafana webhooks) provides users with flexible deployment options ranging from high-performance enterprise solutions to cost-effective IoT implementations.
 
 ## Support
 
@@ -246,7 +278,8 @@ For issues specific to each implementation:
 
 1. **HackRF Server**: Check [HackRF troubleshooting guide](./hackrf_http_server/README.md#troubleshooting)
 2. **TTGO Server**: Verify [ttgo-fsk-tx firmware installation](./ttgo_http_server/README.md#prerequisites)
-3. **Grafana Webhook**: Review [webhook configuration](./webhooks/grafana-webhook/README.md#troubleshooting) - works with both HackRF and TTGO backends
+3. **FLEX Server**: Verify [flex-fsk-tx firmware installation](./flex_http_server/README.md#prerequisites)
+4. **Grafana Webhook**: Review [webhook configuration](./webhooks/grafana-webhook/README.md#troubleshooting) - works with all backends
 
 For general repository issues:
 - Check the [Issues](https://github.com/geekinsanemx/flex-http-server/issues) page
@@ -262,4 +295,5 @@ This software is intended for educational and experimental purposes. Users are r
 - [GNU Radio](https://www.gnuradio.org/) - The premier software toolkit for software radio
 - [HackRF](https://github.com/mossmann/hackrf) - Low cost software defined radio platform
 - [ttgo-fsk-tx](https://github.com/rlaneth/ttgo-fsk-tx/) - **Required firmware for TTGO implementation**
+- [flex-fsk-tx](https://github.com/geekinsanemx/flex-fsk-tx/) - **Required firmware for FLEX implementation**
 - [Universal Hardware Driver (UHD)](https://github.com/EttusResearch/uhd) - Hardware driver for USRP devices

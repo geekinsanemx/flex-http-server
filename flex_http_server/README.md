@@ -17,7 +17,7 @@ A dual-protocol HTTP/TCP server for transmitting FLEX paging messages using devi
 
 ### Supported Devices
 Any device running **flex-fsk-tx firmware** with AT command support:
-- ESP32 modules (TTGO, Heltec, generic)
+- ESP32 modules (TTGO LoRa32-OLED, Heltec WiFi LoRa 32 V3, Heltec LoRa32 V3, generic ESP32)
 - Arduino with SX127x/SX126x LoRa modules
 - Custom hardware with AT command interface
 
@@ -468,7 +468,7 @@ sudo apt install build-essential libcrypt-dev
 
 # Clone and build
 git clone <repository>
-cd flex-http-server
+cd flex_http_server
 make
 
 # Run dependency and device tests
@@ -526,7 +526,7 @@ This FLEX server uses **AT commands** instead of the custom TTGO protocol:
 | **Power** | `p 10\n` | `AT+POWER=10\r\n` |
 | **Data Send** | `m 256\n` + data | `AT+SEND=256\r\n` + data |
 | **Responses** | `CONSOLE:0` | `OK` / `ERROR` |
-| **Device Support** | TTGO specific | Universal AT compatible |
+| **Device Support** | TTGO LoRa32 V1/V2, T-Beam, OLED | TTGO LoRa32-OLED, Heltec V3 |
 | **Firmware** | ttgo-fsk-tx | flex-fsk-tx (AT commands) |
 
 ### Migration from TTGO
