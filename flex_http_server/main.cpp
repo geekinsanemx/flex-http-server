@@ -541,6 +541,7 @@ static volatile sig_atomic_t keep_running = 1;
 void signal_handler(int sig) {
     (void)sig;
     keep_running = 0;
+    printf("\nShutdown signal received, stopping server...\n");
 }
 
 int main(int argc, char* argv[]) {
@@ -711,8 +712,9 @@ int main(int argc, char* argv[]) {
 
     ConnectionState conn_state;
     printf("FLEX HTTP/TCP Server ready, waiting for connections...\n");
+    printf("Press Ctrl+C to stop the server gracefully.\n");
 
-    // Main server loop using select()
+    // Main server loop using select() with proper signal handling
     while (keep_running) {
         fd_set read_fds;
         FD_ZERO(&read_fds);
@@ -727,18 +729,30 @@ int main(int argc, char* argv[]) {
             max_fd = std::max(max_fd, http_server_fd);
         }
 
+        // Shorter timeout for more responsive shutdown
         struct timeval timeout;
-        timeout.tv_sec = 1;
-        timeout.tv_usec = 0;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 500000; // 500ms instead of 1 second
 
         int activity = select(max_fd + 1, &read_fds, NULL, NULL, &timeout);
-        if (activity < 0 && errno != EINTR) {
-            perror("select error");
+
+        // Check keep_running immediately after select returns
+        if (!keep_running) {
             break;
         }
 
+        if (activity < 0) {
+            if (errno == EINTR) {
+                // Signal interrupted select - check keep_running and continue
+                continue;
+            } else {
+                perror("select error");
+                break;
+            }
+        }
+
         if (activity == 0) {
-            // Timeout - check keep_running flag
+            // Timeout - just continue to check keep_running
             continue;
         }
 
@@ -779,9 +793,15 @@ int main(int argc, char* argv[]) {
 
     // Cleanup
     printf("\nShutting down servers...\n");
-    if (serial_server_fd >= 0) close(serial_server_fd);
-    if (http_server_fd >= 0) close(http_server_fd);
+    if (serial_server_fd >= 0) {
+        close(serial_server_fd);
+        printf("Serial TCP server stopped.\n");
+    }
+    if (http_server_fd >= 0) {
+        close(http_server_fd);
+        printf("HTTP server stopped.\n");
+    }
 
-    printf("FLEX HTTP/TCP Server stopped.\n");
+    printf("FLEX HTTP/TCP Server stopped gracefully.\n");
     return 0;
 }
